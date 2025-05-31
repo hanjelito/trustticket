@@ -71,4 +71,26 @@ dependencies {
     implementation("androidx.room:room-runtime:2.7.1")
     // room ktx es para la persistencia de datos
     implementation("androidx.room:room-ktx:2.7.1")
+    //
+    // --- 1) Retrofit y Gson Converter (para llamadas HTTP/REST) ---
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // --- 2) OkHttp (complementario a Retrofit) ---
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    // (opcional) Logging interceptor para depuración:
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+    // --- 3) Coroutines (para ejecutar llamadas en background) ---
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
+
+    // --- 4) DataStore Preferences (opcional, para guardar el token) ---
+    implementation("androidx.datastore:datastore-preferences:1.1.0")
+
+    // --- 5) (Opcional) Moshi + Retrofit si prefieres usar Moshi en lugar de Gson ---
+    // implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
+    // implementation("com.squareup.moshi:moshi:1.15.0")
+    // implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
+
 }
