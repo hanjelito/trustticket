@@ -27,7 +27,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun EventDetailScreen(
     event: EventDTO,
@@ -253,9 +253,10 @@ fun EventDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Tags en forma de chips
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    // Tags con FlowRow para ajuste automático
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         event.tags.forEach { tag ->
                             Surface(
@@ -351,8 +352,6 @@ private fun ContactRow(
         }
     }
 }
-
-
 
 private fun formatDateTime(startDateTime: String, endDateTime: String): String {
     return try {

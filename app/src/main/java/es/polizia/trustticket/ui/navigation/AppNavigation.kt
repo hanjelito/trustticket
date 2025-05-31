@@ -21,12 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import es.polizia.trustticket.data.repository.EventRepository
 import es.polizia.trustticket.ui.screen.event.EventDetailScreen
 import es.polizia.trustticket.ui.screen.event.EventScreen
 import es.polizia.trustticket.ui.screen.login.LoginScreen
@@ -51,7 +54,14 @@ fun AppNavigator() {
     val currentDestination = navBackStackEntry?.destination
 
     // ViewModels compartidos
-    val eventsViewModel: EventsViewModel = viewModel()
+    val eventsViewModel: EventsViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return EventsViewModel(EventRepository()) as T
+            }
+        }
+    )
     val authViewModel: AuthViewModel     = viewModel()
 
     // Solo mostramos el bottom bar en pantallas Events, MyEvent y Logout
@@ -97,7 +107,9 @@ fun AppNavigator() {
             composable(Screen.Login.route) {
                 LoginScreen(
                     onLoginSuccess = { auth_jwt ->
-                        // Almacenamos auth_jwt (ya lo guarda el ViewModel en SessionManager)
+                        // ⭐ IMPORTANTE: Cargar eventos después del login exitoso
+                        eventsViewModel.refreshEvents()
+
                         // Luego navegamos a Events y borramos Login de la pila
                         navController.navigate(Screen.Events.route) {
                             popUpTo(Screen.Login.route) { inclusive = true }

@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import es.polizia.trustticket.ui.components.EventCard
@@ -26,61 +27,55 @@ import es.polizia.trustticket.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventScreen(
-    onEventClick: (String) -> Unit,
-    viewModel: EventsViewModel = viewModel()
+    viewModel: EventsViewModel,
+    onEventClick: (String) -> Unit
 ) {
-    val events by viewModel.events.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val eventos by viewModel.events.collectAsState()
+    val cargando by viewModel.isLoading.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row {
-                        Image(
-                            painter = painterResource(id = R.drawable.logo),
-                            contentDescription = "Logo de TrustTicket",
-                            modifier = Modifier
-                                .height(40.dp)
-                                .width(40.dp)
-                        )
-                        Image(
-                            painter = painterResource(id = R.drawable.texto),
-                            contentDescription = "Logo de TrustTicket",
-                            modifier = Modifier
-                                .height(40.dp)
-                        )
-                    }
-                },
-            )
-        },
-        content = { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues) // importante para respetar el padding del Scaffold
-            ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    when {
-                        isLoading && events.isEmpty() -> {
-                            LoadingState()
-                        }
-                        events.isEmpty() && !isLoading -> {
-                            EmptyState(onRetry = { viewModel.refreshEvents() })
-                        }
-                        else -> {
-                            EventsList(
-                                events = events,
-                                onEventClick = onEventClick,
-                                isRefreshing = isLoading && events.isNotEmpty()
-                            )
-                        }
-                    }
+    if (cargando) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(vertical = 8.dp),      // padding arriba/abajo de todo el listado
+            verticalArrangement = Arrangement.spacedBy(8.dp)      // 8.dp de separación entre cada card
+        ) {
+            if (eventos.isEmpty()) {
+                item {
+                    Text(
+                        text = "No hay eventos disponibles.",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                        ,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                items(
+                    items = eventos,
+                    key = { it.id }
+                ) { event ->
+                    EventCard(
+                        event = event,
+                        onClick = { onEventClick(event.id) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp)  // 16.dp a cada lado de la pantalla
+                    )
                 }
             }
         }
-    )
+    }
 }
+
+
 
 @Composable
 private fun LoadingState() {

@@ -3,6 +3,7 @@ package es.polizia.trustticket.data.network
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -22,9 +23,22 @@ class HeadersInterceptor : Interceptor {
 object RetrofitClient {
     private const val BASE_URL = "https://trustticket.onrender.com/"
 
-    // OkHttpClient (opcionalmente puedes agregar interceptores de logging, timeouts, etc.)
+    // 1) Interceptor que añade Content-Type
+    private val headersInterceptor = HeadersInterceptor()
+
+    // 2) Interceptor que añade “Authorization: Bearer <jwt>”
+    private val authInterceptor = AuthInterceptor()
+
+    // 3) (Opcional) interceptor de logging para ver peticiones en Logcat
+    //    import okhttp3.logging.HttpLoggingInterceptor
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+
     private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(HeadersInterceptor())
+        .addInterceptor(headersInterceptor)
+        .addInterceptor(authInterceptor)   // <— ahora incluye el header Authorization
+        .addInterceptor(loggingInterceptor) // <— opcional, pero muy útil para depurar
         .build()
 
     val instance: Retrofit by lazy {

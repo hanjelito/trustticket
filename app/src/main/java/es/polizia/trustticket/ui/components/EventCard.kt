@@ -44,8 +44,8 @@ fun EventCard(
             .clickable { onClick(event.id.toString()) },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp, // Reducido para mejor rendimiento
-            pressedElevation = 4.dp
+            defaultElevation = 6.dp, // <— aquí podrías aumentar a, digamos, 4.dp o 6.dp
+            pressedElevation = 8.dp
         ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface

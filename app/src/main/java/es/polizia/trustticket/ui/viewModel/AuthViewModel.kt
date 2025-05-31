@@ -39,12 +39,11 @@ class AuthViewModel : ViewModel() {
                 // Si llegamos aquí, el login fue exitoso
                 val auth_jwt = response.auth_jwt
 
+                // ⭐ IMPORTANTE: Guardamos el token en SessionManager
+                SessionManager.authToken = auth_jwt
+
                 // Actualizamos el estado a Success con el token
                 _loginState.value = AuthState.Success(auth_jwt)
-
-                // Aquí puedes, opcionalmente, guardar el token en DataStore / SharedPreferences / EncryptedStorage
-                // para usarlo en futuras peticiones:
-                // saveToken(token)
 
             } catch (e: IOException) {
                 // Error de conexión (timeout, no internet, etc.)

@@ -1,27 +1,36 @@
+// data/repository/EventRepository.kt
 package es.polizia.trustticket.data.repository
 
-import android.content.Context
-import android.util.Log
 import es.polizia.trustticket.data.dto.EventDTO
-import es.polizia.trustticket.utils.loadEventFromJson
+import es.polizia.trustticket.data.network.EventApiService
+import es.polizia.trustticket.data.network.RetrofitClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import retrofit2.HttpException
+import java.io.IOException
 
-class EventRepository(private val context: Context) {
+class EventRepository {
 
-    fun getEvents(): List<EventDTO> {
-        Log.d("EventRepository", "=== REPOSITORY: Starting getEvents() ===")
+    // Instancia perezosa (lazy) de EventApiService
+    private val apiService: EventApiService by lazy {
+        RetrofitClient.instance.create(EventApiService::class.java)
+    }
 
-        return try {
-            val events = context.loadEventFromJson()
-
-            if (events.isEmpty()) {
-                Log.w("EventRepository", "⚠️ No events loaded from JSON")
-            } else {
-                Log.d("EventRepository", "✅ Successfully loaded ${events.size} events")
-            }
-
-            events
+    // Ahora no recibe token: el interceptor lo añade automáticamente
+    suspend fun getEvents(): List<EventDTO> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            apiService.getEvents()
+        } catch (e: IOException) {
+            // Error de red
+            e.printStackTrace()
+            emptyList()
+        } catch (e: HttpException) {
+            // Error HTTP (404, 500, etc.)
+            e.printStackTrace()
+            emptyList()
         } catch (e: Exception) {
-            Log.e("EventRepository", "❌ Exception in getEvents()", e)
+            // Cualquier otro error
+            e.printStackTrace()
             emptyList()
         }
     }
