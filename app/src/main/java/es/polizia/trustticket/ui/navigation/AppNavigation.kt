@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
@@ -36,6 +37,7 @@ import es.polizia.trustticket.ui.screen.event.EventDetailScreen
 import es.polizia.trustticket.ui.screen.event.EventScreen
 import es.polizia.trustticket.ui.screen.login.LoginScreen
 import es.polizia.trustticket.ui.screen.tickets.MyTicketsScreen
+import es.polizia.trustticket.ui.screen.tickets.TicketDetailScreen  // ⭐ AGREGAR ESTA IMPORTACIÓN
 import es.polizia.trustticket.ui.viewModel.EventsViewModel
 import es.polizia.trustticket.ui.viewModel.AuthViewModel
 import es.polizia.trustticket.ui.viewModel.MyTicketsViewModel
@@ -44,7 +46,7 @@ import es.polizia.trustticket.ui.viewModel.MyTicketsViewModel
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object Login     : Screen("login",     "Login",        Icons.Default.Person)
     object Events    : Screen("events",    "Events",       Icons.Default.Face)
-    object MyTickets : Screen("mytickets", "Mis Tickets", Icons.Default.Build)
+    object MyTickets : Screen("mytickets", "Mis Tickets", Icons.Default.CheckCircle)
     object Logout    : Screen("logout",    "Logout",       Icons.Default.Close)
 }
 
@@ -172,11 +174,36 @@ fun AppNavigator() {
             // 4) PANTALLA DE "Mis Tickets"
             composable(Screen.MyTickets.route) {
                 MyTicketsScreen(
-                    viewModel = myTicketsViewModel
+                    viewModel = myTicketsViewModel,
+                    onTicketClick = { ticket ->
+                        navController.navigate("ticket_detail/${ticket.id}")
+                    }
                 )
             }
 
-            // 5) PANTALLA DE LOGOUT
+            // ⭐ 5) DETALLE DE TICKET - NUEVA RUTA AGREGADA
+            composable(
+                route = "ticket_detail/{ticketId}",
+                arguments = listOf(navArgument("ticketId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val ticketId = backStackEntry.arguments?.getString("ticketId")
+                val tickets by myTicketsViewModel.tickets.collectAsState()
+                val ticket = tickets.find { it.id == ticketId }
+
+                if (ticket != null) {
+                    TicketDetailScreen(
+                        ticket = ticket,
+                        onBack = { navController.popBackStack() }
+                    )
+                } else {
+                    ErrorScreen(
+                        message = "Ticket not found",
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+            }
+
+            // 6) PANTALLA DE LOGOUT
             composable(Screen.Logout.route) {
                 // En cuanto el usuario selecciona la pestaña "Logout", ejecutamos el logout y volvemos al Login
                 LaunchedEffect(Unit) {

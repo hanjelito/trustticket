@@ -88,9 +88,7 @@ dependencies {
     // --- 4) DataStore Preferences (opcional, para guardar el token) ---
     implementation("androidx.datastore:datastore-preferences:1.1.0")
 
-    // --- 5) (Opcional) Moshi + Retrofit si prefieres usar Moshi en lugar de Gson ---
-    // implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
-    // implementation("com.squareup.moshi:moshi:1.15.0")
-    // implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
+    implementation("com.google.zxing:core:3.5.2")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
 }

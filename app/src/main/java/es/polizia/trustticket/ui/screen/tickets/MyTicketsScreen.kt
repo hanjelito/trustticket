@@ -13,13 +13,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import es.polizia.trustticket.data.dto.MyTicketDTO
 import es.polizia.trustticket.ui.components.TicketCard
 import es.polizia.trustticket.ui.viewModel.MyTicketsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyTicketsScreen(
-    viewModel: MyTicketsViewModel
+    viewModel: MyTicketsViewModel,
+    onTicketClick: (MyTicketDTO) -> Unit
 ) {
     val tickets by viewModel.tickets.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -66,7 +68,10 @@ fun MyTicketsScreen(
                     EmptyTicketsState()
                 }
                 else -> {
-                    TicketsList(tickets = tickets)
+                    TicketsList(
+                        tickets = tickets,
+                        onTicketClick = onTicketClick  // <-- Agregar este parámetro
+                    )
                 }
             }
         }
@@ -168,7 +173,8 @@ private fun EmptyTicketsState() {
 
 @Composable
 private fun TicketsList(
-    tickets: List<es.polizia.trustticket.data.dto.MyTicketDTO>
+    tickets: List<MyTicketDTO>,
+    onTicketClick: (MyTicketDTO) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -190,6 +196,7 @@ private fun TicketsList(
         ) { ticket ->
             TicketCard(
                 ticket = ticket,
+                onClick = onTicketClick,
                 modifier = Modifier.fillMaxWidth()
             )
         }
