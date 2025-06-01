@@ -1,4 +1,3 @@
-// ui/screen/tickets/TicketDetailScreen.kt
 package es.polizia.trustticket.ui.screen.tickets
 
 import androidx.compose.foundation.Image
@@ -21,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,12 +29,10 @@ import es.polizia.trustticket.data.dto.MyTicketDTO
 import es.polizia.trustticket.data.repository.TicketRepository
 import es.polizia.trustticket.ui.viewModel.QRResult
 import es.polizia.trustticket.ui.viewModel.TicketDetailViewModel
-import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import android.graphics.Bitmap
-import androidx.compose.ui.graphics.toArgb
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 

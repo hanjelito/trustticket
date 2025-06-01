@@ -182,11 +182,11 @@ fun LoginScreen(
                         PasswordVisualTransformation(),
                     trailingIcon = {
                         val visibilityIcon =
-                            if (passwordVisible) Icons.Outlined.Close
-                            else Icons.Outlined.Close
+                            if (passwordVisible) R.drawable.ic_eye
+                            else R.drawable.ic_eye_close
 
                         Icon(
-                            imageVector = visibilityIcon,
+                            painter = painterResource(id = visibilityIcon),  // Cambio aquí: painter en lugar de imageVector
                             contentDescription = if (passwordVisible)
                                 "Ocultar contraseña"
                             else

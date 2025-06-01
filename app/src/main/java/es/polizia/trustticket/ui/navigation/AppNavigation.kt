@@ -10,17 +10,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -37,17 +35,26 @@ import es.polizia.trustticket.ui.screen.event.EventDetailScreen
 import es.polizia.trustticket.ui.screen.event.EventScreen
 import es.polizia.trustticket.ui.screen.login.LoginScreen
 import es.polizia.trustticket.ui.screen.tickets.MyTicketsScreen
-import es.polizia.trustticket.ui.screen.tickets.TicketDetailScreen  // ⭐ AGREGAR ESTA IMPORTACIÓN
+import es.polizia.trustticket.ui.screen.tickets.TicketDetailScreen
 import es.polizia.trustticket.ui.viewModel.EventsViewModel
 import es.polizia.trustticket.ui.viewModel.AuthViewModel
 import es.polizia.trustticket.ui.viewModel.MyTicketsViewModel
+import es.polizia.trustticket.R
 
-// Sealed class para las rutas de navegación
-sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
-    object Login     : Screen("login",     "Login",        Icons.Default.Person)
-    object Events    : Screen("events",    "Events",       Icons.Default.Face)
-    object MyTickets : Screen("mytickets", "Mis Tickets", Icons.Default.CheckCircle)
-    object Logout    : Screen("logout",    "Logout",       Icons.Default.Close)
+// Sealed class para las rutas de navegación con soporte para ImageVector y recursos drawable
+sealed class Screen(
+    val route: String,
+    val title: String,
+    val icon: ImageVector? = null,
+    val iconRes: Int? = null
+) {
+    constructor(route: String, title: String, icon: ImageVector) : this(route, title, icon, null)
+    constructor(route: String, title: String, iconRes: Int) : this(route, title, null, iconRes)
+
+    object Login     : Screen("login",     "Login",         Icons.Default.Person)
+    object Events    : Screen("events",    "Events",        R.drawable.ic_events)
+    object MyTickets : Screen("mytickets", "Mis Tickets",   R.drawable.ic_ticket)
+    object Logout    : Screen("logout",    "Logout",        R.drawable.ic_logout)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,7 +101,16 @@ fun AppNavigator() {
                 NavigationBar {
                     bottomNavItems.forEach { screen ->
                         NavigationBarItem(
-                            icon = { Icon(screen.icon, contentDescription = screen.title) },
+                            icon = {
+                                // Aquí manejamos tanto ImageVector como recursos drawable
+                                when {
+                                    screen.icon != null -> Icon(screen.icon, contentDescription = screen.title)
+                                    screen.iconRes != null -> Icon(
+                                        painter = painterResource(id = screen.iconRes),
+                                        contentDescription = screen.title
+                                    )
+                                }
+                            },
                             label = { Text(screen.title) },
                             selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                             onClick = {
