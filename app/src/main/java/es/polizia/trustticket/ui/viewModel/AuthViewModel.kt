@@ -1,8 +1,12 @@
+// ui/viewModel/AuthViewModel.kt
 package es.polizia.trustticket.ui.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import es.polizia.trustticket.data.models.ErrorResponse
 import es.polizia.trustticket.data.models.LoginRequest
+import es.polizia.trustticket.data.models.RegisterRequest
 import es.polizia.trustticket.data.network.AuthService
 import es.polizia.trustticket.data.network.RetrofitClient
 import es.polizia.trustticket.data.network.SessionManager
@@ -13,9 +17,12 @@ import retrofit2.HttpException
 import java.io.IOException
 
 class AuthViewModel : ViewModel() {
-    // Estado observable para la UI
+    // Estados observables para la UI
     private val _loginState = MutableStateFlow<AuthState>(AuthState.Idle)
     val loginState: StateFlow<AuthState> = _loginState
+
+    private val _registerState = MutableStateFlow<RegisterState>(RegisterState.Idle)
+    val registerState: StateFlow<RegisterState> = _registerState
 
     // Instanciamos el servicio de Retrofit
     private val authService: AuthService = RetrofitClient.instance.create(AuthService::class.java)
@@ -64,10 +71,79 @@ class AuthViewModel : ViewModel() {
     }
 
     /**
-     * Opcional: función para resetear el estado a Idle (por ejemplo, si cierras sesión).
+     * Lanza una coroutine para hacer la petición de registro.
      */
-    fun resetState() {
+    fun register(
+        name: String,
+        surname: String,
+        username: String,
+        phone: String,
+        email: String,
+        password: String
+    ) {
+        // Evitar invocar varias veces en paralelo
+        if (_registerState.value is RegisterState.Loading) return
+
+        viewModelScope.launch {
+            _registerState.value = RegisterState.Loading
+
+            try {
+                val request = RegisterRequest(
+                    name = name.trim(),
+                    surname = surname.trim(),
+                    username = username.trim(),
+                    phone = phone.trim(),
+                    email = email.trim(),
+                    password = password
+                )
+
+                val response = authService.register(request)
+
+                // ✅ CORREGIDO: Si llegamos aquí sin excepción y tenemos JWT, es éxito
+                if (response.auth_jwt.isNotBlank()) {
+                    println("✅ Registro exitoso con JWT: ${response.auth_jwt}")
+                    _registerState.value = RegisterState.Success
+                } else {
+                    _registerState.value = RegisterState.Error("No se recibió token de autenticación")
+                }
+
+            } catch (e: IOException) {
+                _registerState.value = RegisterState.Error("Error de red: ${e.localizedMessage}")
+            } catch (e: HttpException) {
+                // Intentar parsear errores del servidor
+                try {
+                    val errorBody = e.response()?.errorBody()?.string()
+                    val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+
+                    val message = when (e.code()) {
+                        400 -> "Datos inválidos"
+                        409 -> "El usuario o email ya existe"
+                        422 -> "Error de validación"
+                        else -> "Error del servidor: ${e.code()}"
+                    }
+
+                    _registerState.value = RegisterState.Error(
+                        message = errorResponse.detail ?: errorResponse.message ?: message,
+                        fieldErrors = errorResponse.errors ?: emptyMap()
+                    )
+                } catch (parseException: Exception) {
+                    _registerState.value = RegisterState.Error("Error del servidor: ${e.code()}")
+                }
+            } catch (e: Exception) {
+                _registerState.value = RegisterState.Error("Error inesperado: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    /**
+     * Resetear los estados
+     */
+    fun resetLoginState() {
         _loginState.value = AuthState.Idle
+    }
+
+    fun resetRegisterState() {
+        _registerState.value = RegisterState.Idle
     }
 
     fun logout() {
@@ -75,5 +151,6 @@ class AuthViewModel : ViewModel() {
         SessionManager.authToken = null
         // Reiniciamos el estado de login para que sea Idle
         _loginState.value = AuthState.Idle
+        _registerState.value = RegisterState.Idle
     }
 }

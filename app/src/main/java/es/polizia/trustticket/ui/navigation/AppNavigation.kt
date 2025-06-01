@@ -10,9 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Person
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,19 +28,20 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import es.polizia.trustticket.R
 import es.polizia.trustticket.data.repository.EventRepository
 import es.polizia.trustticket.data.repository.TicketRepository
 import es.polizia.trustticket.ui.screen.event.EventDetailScreen
 import es.polizia.trustticket.ui.screen.event.EventScreen
 import es.polizia.trustticket.ui.screen.login.LoginScreen
+import es.polizia.trustticket.ui.screen.register.RegisterScreen
 import es.polizia.trustticket.ui.screen.tickets.MyTicketsScreen
 import es.polizia.trustticket.ui.screen.tickets.TicketDetailScreen
 import es.polizia.trustticket.ui.viewModel.EventsViewModel
 import es.polizia.trustticket.ui.viewModel.AuthViewModel
 import es.polizia.trustticket.ui.viewModel.MyTicketsViewModel
-import es.polizia.trustticket.R
 
-// Sealed class para las rutas de navegación con soporte para ImageVector y recursos drawable
+// Sealed class para las rutas de navegación
 sealed class Screen(
     val route: String,
     val title: String,
@@ -55,6 +55,7 @@ sealed class Screen(
     object Events    : Screen("events",    "Events",        R.drawable.ic_events)
     object MyTickets : Screen("mytickets", "Mis Tickets",   R.drawable.ic_ticket)
     object Logout    : Screen("logout",    "Logout",        R.drawable.ic_logout)
+    object Register  : Screen("register",  "Register",      R.drawable.ic_ticket)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,10 +103,10 @@ fun AppNavigator() {
                     bottomNavItems.forEach { screen ->
                         NavigationBarItem(
                             icon = {
-                                // Aquí manejamos tanto ImageVector como recursos drawable
-                                when {
-                                    screen.icon != null -> Icon(screen.icon, contentDescription = screen.title)
-                                    screen.iconRes != null -> Icon(
+                                if (screen.icon != null) {
+                                    Icon(screen.icon, contentDescription = screen.title)
+                                } else if (screen.iconRes != null) {
+                                    Icon(
                                         painter = painterResource(id = screen.iconRes),
                                         contentDescription = screen.title
                                     )
@@ -148,11 +149,30 @@ fun AppNavigator() {
                             popUpTo(Screen.Login.route) { inclusive = true }
                         }
                     },
+                    onNavigateToRegister = {
+                        navController.navigate(Screen.Register.route)
+                    },
                     authViewModel = authViewModel
                 )
             }
 
-            // 2) PANTALLA DE EVENTOS
+            // 2) PANTALLA DE REGISTRO
+            composable(Screen.Register.route) {
+                RegisterScreen(
+                    onRegisterSuccess = {
+                        // Después del registro exitoso, navegar al login
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Register.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateToLogin = {
+                        navController.popBackStack()
+                    },
+                    authViewModel = authViewModel
+                )
+            }
+
+            // 3) PANTALLA DE EVENTOS
             composable(Screen.Events.route) {
                 EventScreen(
                     onEventClick = { eventId ->
@@ -162,7 +182,7 @@ fun AppNavigator() {
                 )
             }
 
-            // 3) DETALLE DE CADA EVENTO
+            // 4) DETALLE DE CADA EVENTO
             composable(
                 route = "event_detail/{eventId}",
                 arguments = listOf(navArgument("eventId") { type = NavType.StringType })
@@ -187,7 +207,7 @@ fun AppNavigator() {
                 }
             }
 
-            // 4) PANTALLA DE "Mis Tickets"
+            // 5) PANTALLA DE "Mis Tickets"
             composable(Screen.MyTickets.route) {
                 MyTicketsScreen(
                     viewModel = myTicketsViewModel,
@@ -197,7 +217,7 @@ fun AppNavigator() {
                 )
             }
 
-            // ⭐ 5) DETALLE DE TICKET - NUEVA RUTA AGREGADA
+            // 5) DETALLE DE TICKET CON QR
             composable(
                 route = "ticket_detail/{ticketId}",
                 arguments = listOf(navArgument("ticketId") { type = NavType.StringType })
@@ -205,7 +225,6 @@ fun AppNavigator() {
                 val ticketId = backStackEntry.arguments?.getString("ticketId")
                 val tickets by myTicketsViewModel.tickets.collectAsState()
                 val ticket = tickets.find { it.id == ticketId }
-
                 if (ticket != null) {
                     TicketDetailScreen(
                         ticket = ticket,
@@ -219,7 +238,7 @@ fun AppNavigator() {
                 }
             }
 
-            // 6) PANTALLA DE LOGOUT
+            // 7) PANTALLA DE LOGOUT
             composable(Screen.Logout.route) {
                 // En cuanto el usuario selecciona la pestaña "Logout", ejecutamos el logout y volvemos al Login
                 LaunchedEffect(Unit) {

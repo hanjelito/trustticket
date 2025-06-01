@@ -1,3 +1,4 @@
+// ui/screen/login/LoginScreen.kt  
 package es.polizia.trustticket.ui.screen.login
 
 import androidx.compose.animation.AnimatedVisibility
@@ -12,7 +13,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,6 +35,7 @@ import es.polizia.trustticket.ui.viewModel.AuthViewModel
 @Composable
 fun LoginScreen(
     onLoginSuccess: (auth_jwt: String) -> Unit,
+    onNavigateToRegister: () -> Unit,
     authViewModel: AuthViewModel = viewModel()
 ) {
     // 1) Observamos el estado de login del ViewModel
@@ -107,7 +108,7 @@ fun LoginScreen(
                         .padding(bottom = 16.dp)
                 )
 
-                // 5.1.2) Título “Bienvenido”
+                // 5.1.2) Título "Bienvenido"
                 Text(
                     text = "Bienvenido",
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -145,11 +146,8 @@ fun LoginScreen(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         cursorColor = MaterialTheme.colorScheme.primary,
-                        // Borde en azul cuando está enfocado
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        // Borde en gris cuando no está enfocado
                         unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        // (Opcional) otras variantes:
                         disabledBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                         errorBorderColor = MaterialTheme.colorScheme.error
                     )
@@ -186,7 +184,7 @@ fun LoginScreen(
                             else R.drawable.ic_eye_close
 
                         Icon(
-                            painter = painterResource(id = visibilityIcon),  // Cambio aquí: painter en lugar de imageVector
+                            painter = painterResource(id = visibilityIcon),
                             contentDescription = if (passwordVisible)
                                 "Ocultar contraseña"
                             else
@@ -208,9 +206,7 @@ fun LoginScreen(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         cursorColor = MaterialTheme.colorScheme.primary,
-                        // Borde en azul cuando está enfocado
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        // Borde en gris cuando no está enfocado
                         unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         disabledBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                         errorBorderColor = MaterialTheme.colorScheme.error
@@ -263,16 +259,30 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 5.1.6) “¿Olvidaste tu contraseña?”
-                TextButton(
-                    onClick = { /* TODO: Acción “Olvidé mi contraseña” */ },
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text(
-                        text = "¿Olvidaste tu contraseña?",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 14.sp
-                    )
+                // 5.1.6) Botones de navegación
+                Column {
+                    TextButton(
+                        onClick = { /* TODO: Acción "Olvidé mi contraseña" */ },
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text(
+                            text = "¿Olvidaste tu contraseña?",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 14.sp
+                        )
+                    }
+
+                    TextButton(
+                        onClick = onNavigateToRegister,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Text(
+                            text = "¿No tienes cuenta? Regístrate",
+                            color = MaterialTheme.colorScheme.secondary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }

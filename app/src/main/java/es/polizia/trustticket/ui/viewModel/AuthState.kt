@@ -9,3 +9,13 @@ sealed class AuthState {
     data class Success(val token: String) : AuthState() // login exitoso, guardamos el token
     data class Error(val message: String) : AuthState() // ocurrió un error (credenciales inválidas, red, server)
 }
+
+//sealed class RegisterState {
+//    object Idle : RegisterState()
+//    object Loading : RegisterState()
+//    object Success : RegisterState()
+//    data class Error(
+//        val message: String,
+//        val fieldErrors: Map<String, List<String>> = emptyMap()
+//    ) : RegisterState()
+//}

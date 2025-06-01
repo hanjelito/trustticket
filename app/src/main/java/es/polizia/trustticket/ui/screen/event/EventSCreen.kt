@@ -13,12 +13,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
 import es.polizia.trustticket.ui.components.EventCard
 import es.polizia.trustticket.ui.viewModel.EventsViewModel
@@ -33,49 +35,80 @@ fun EventScreen(
     val eventos by viewModel.events.collectAsState()
     val cargando by viewModel.isLoading.collectAsState()
 
-    if (cargando) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Logo
+                        Image(
+                            painter = painterResource(id = R.drawable.logo),
+                            contentDescription = "TrustTicket Logo",
+                            modifier = Modifier.size(32.dp)
+                        )
+                        // Título
+                        Image(
+                            painter = painterResource(id = R.drawable.texto),
+                            contentDescription = "TrustTicket Logo",
+                            modifier = Modifier.size(120.dp)
+                        )
+                    }
+                },
+//                colors = TopAppBarDefaults.topAppBarColors(
+//                    containerColor = MaterialTheme.colorScheme.primary,
+//                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+//                )
+            )
         }
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(vertical = 8.dp),      // padding arriba/abajo de todo el listado
-            verticalArrangement = Arrangement.spacedBy(8.dp)      // 8.dp de separación entre cada card
-        ) {
-            if (eventos.isEmpty()) {
-                item {
-                    Text(
-                        text = "No hay eventos disponibles.",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                        ,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            } else {
-                items(
-                    items = eventos,
-                    key = { it.id }
-                ) { event ->
-                    EventCard(
-                        event = event,
-                        onClick = { onEventClick(event.id) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp)  // 16.dp a cada lado de la pantalla
-                    )
+    ) { paddingValues ->
+        if (cargando) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (eventos.isEmpty()) {
+                    item {
+                        Text(
+                            text = "No hay eventos disponibles.",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    items(
+                        items = eventos,
+                        key = { it.id }
+                    ) { event ->
+                        EventCard(
+                            event = event,
+                            onClick = { onEventClick(event.id) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 10.dp)
+                        )
+                    }
                 }
             }
         }
     }
 }
-
-
 
 @Composable
 private fun LoadingState() {
