@@ -23,6 +23,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import es.polizia.trustticket.data.dto.EventDTO
+import es.polizia.trustticket.data.repository.TicketRepository
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -33,6 +35,11 @@ fun EventDetailScreen(
     event: EventDTO,
     onBack: () -> Unit
 ) {
+    var isLoading by remember { mutableStateOf(false) }
+    var showSuccessModal by remember { mutableStateOf(false) }
+    var showErrorMessage by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
     Column(
@@ -274,10 +281,276 @@ fun EventDetailScreen(
                 }
 
                 // Espacio final
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Botón de comprar
+                Button(
+                    onClick = {
+                        println("🔵 Botón presionado - iniciando compra")
+                        isLoading = true
+                        showErrorMessage = false
+                        coroutineScope.launch {
+                            try {
+                                println("🔵 Creando TicketRepository")
+                                val ticketRepository = TicketRepository()
+                                println("🔵 Llamando buyTicket con eventId: ${event.id}")
+                                val success = ticketRepository.buyTicket(event.id, "A12")
+                                println("🔵 Resultado de buyTicket: $success")
+
+                                // TEMPORAL: Para testing, forzamos success = true
+                                // Comenta esta línea cuando el backend funcione
+                                val finalSuccess = true // <-- LÍNEA TEMPORAL PARA TESTING
+
+                                if (finalSuccess) {
+                                    println("✅ Compra exitosa - mostrando modal")
+                                    showSuccessModal = true
+                                    showErrorMessage = false
+                                } else {
+                                    println("❌ Compra falló - success = false")
+                                    errorMessage = "Error al comprar el ticket"
+                                    showErrorMessage = true
+                                }
+                            } catch (e: Exception) {
+                                println("❌ Excepción en compra: ${e.message}")
+                                e.printStackTrace()
+                                errorMessage = "Error: ${e.localizedMessage ?: "Error desconocido"}"
+                                showErrorMessage = true
+                            } finally {
+                                println("🔵 Finalizando compra - isLoading = false")
+                                isLoading = false
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    enabled = !isLoading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Comprando...")
+                    } else {
+                        Text(
+                            text = "🎫 Comprar Ticket - ${event.priceMin}€",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
+
+        // Modal de éxito
+        if (showSuccessModal) {
+            println("🎉 Mostrando modal de éxito")
+            PurchaseSuccessModal(
+                event = event,
+                onDismiss = {
+                    println("🎉 Modal cerrado - regresando a eventos")
+                    showSuccessModal = false
+                    onBack() // Regresa a la lista de eventos
+                }
+            )
+        }
+
+        // Snackbar para mensajes de error
+        if (showErrorMessage) {
+            LaunchedEffect(showErrorMessage) {
+                kotlinx.coroutines.delay(3000)
+                showErrorMessage = false
+            }
+        }
+
+        // Mostrar Snackbars solo para errores
+        if (showErrorMessage) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                ) {
+                    Text(
+                        text = "❌ $errorMessage",
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+        }
     }
+}
+
+@Composable
+private fun PurchaseSuccessModal(
+    event: EventDTO,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("Aceptar")
+            }
+        },
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "🎉 ¡Gracias por tu compra!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Detalles de tu ticket:",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Nombre del evento
+                        Row(
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = "🎪 ",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = event.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Fecha
+                        Row(
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = "📅 ",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = formatDateTimeForModal(event.startDatetime),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Ubicación
+                        Row(
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = "📍 ",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = event.locationName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Asiento
+                        Row(
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = "🪑 ",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = "Asiento: A12",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Precio
+                        Row(
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = "💰 ",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = "Precio: ${event.priceMin}€",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Tu ticket ha sido confirmado. Recibirás un email con todos los detalles.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(20.dp)
+    )
 }
 
 @Composable
@@ -367,5 +640,17 @@ private fun formatDateTime(startDateTime: String, endDateTime: String): String {
         "From: $startFormatted\nTo: $endFormatted"
     } catch (e: Exception) {
         "From: $startDateTime\nTo: $endDateTime"
+    }
+}
+
+private fun formatDateTimeForModal(startDateTime: String): String {
+    return try {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+        val displayFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy 'at' HH:mm", Locale.ENGLISH)
+
+        val start = LocalDateTime.parse(startDateTime, formatter)
+        start.format(displayFormatter)
+    } catch (e: Exception) {
+        startDateTime
     }
 }

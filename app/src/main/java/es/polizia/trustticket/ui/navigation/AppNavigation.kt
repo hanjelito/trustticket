@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Favorite
@@ -30,18 +31,21 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import es.polizia.trustticket.data.repository.EventRepository
+import es.polizia.trustticket.data.repository.TicketRepository
 import es.polizia.trustticket.ui.screen.event.EventDetailScreen
 import es.polizia.trustticket.ui.screen.event.EventScreen
 import es.polizia.trustticket.ui.screen.login.LoginScreen
+import es.polizia.trustticket.ui.screen.tickets.MyTicketsScreen
 import es.polizia.trustticket.ui.viewModel.EventsViewModel
 import es.polizia.trustticket.ui.viewModel.AuthViewModel
+import es.polizia.trustticket.ui.viewModel.MyTicketsViewModel
 
 // Sealed class para las rutas de navegación
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
-    object Login   : Screen("login",   "Login",   Icons.Default.Person)
-    object Events  : Screen("events",  "Events",  Icons.Default.Face)
-    object MyEvent : Screen("MyEvent", "Mis Eventos", Icons.Default.Favorite)
-    object Logout  : Screen("logout",  "Logout",  Icons.Default.Close)
+    object Login     : Screen("login",     "Login",        Icons.Default.Person)
+    object Events    : Screen("events",    "Events",       Icons.Default.Face)
+    object MyTickets : Screen("mytickets", "Mis Tickets", Icons.Default.Build)
+    object Logout    : Screen("logout",    "Logout",       Icons.Default.Close)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,12 +66,22 @@ fun AppNavigator() {
             }
         }
     )
-    val authViewModel: AuthViewModel     = viewModel()
 
-    // Solo mostramos el bottom bar en pantallas Events, MyEvent y Logout
+    val myTicketsViewModel: MyTicketsViewModel = viewModel(
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return MyTicketsViewModel(TicketRepository()) as T
+            }
+        }
+    )
+
+    val authViewModel: AuthViewModel = viewModel()
+
+    // Solo mostramos el bottom bar en pantallas Events, MyTickets y Logout
     val bottomNavItems = listOf(
         Screen.Events,
-        Screen.MyEvent,
+        Screen.MyTickets,
         Screen.Logout
     )
 
@@ -107,8 +121,9 @@ fun AppNavigator() {
             composable(Screen.Login.route) {
                 LoginScreen(
                     onLoginSuccess = { auth_jwt ->
-                        // ⭐ IMPORTANTE: Cargar eventos después del login exitoso
+                        // ⭐ IMPORTANTE: Cargar eventos y tickets después del login exitoso
                         eventsViewModel.refreshEvents()
+                        myTicketsViewModel.refresh()
 
                         // Luego navegamos a Events y borramos Login de la pila
                         navController.navigate(Screen.Events.route) {
@@ -140,7 +155,11 @@ fun AppNavigator() {
                 if (event != null) {
                     EventDetailScreen(
                         event = event,
-                        onBack = { navController.popBackStack() }
+                        onBack = {
+                            // Actualizar tickets después de una posible compra
+                            myTicketsViewModel.refresh()
+                            navController.popBackStack()
+                        }
                     )
                 } else {
                     ErrorScreen(
@@ -150,14 +169,16 @@ fun AppNavigator() {
                 }
             }
 
-            // 4) PANTALLA DE “Mis Eventos” (Profile)
-            composable(Screen.MyEvent.route) {
-                ProfileScreen()
+            // 4) PANTALLA DE "Mis Tickets"
+            composable(Screen.MyTickets.route) {
+                MyTicketsScreen(
+                    viewModel = myTicketsViewModel
+                )
             }
 
             // 5) PANTALLA DE LOGOUT
             composable(Screen.Logout.route) {
-                // En cuanto el usuario selecciona la pestaña “Logout”, ejecutamos el logout y volvemos al Login
+                // En cuanto el usuario selecciona la pestaña "Logout", ejecutamos el logout y volvemos al Login
                 LaunchedEffect(Unit) {
                     // 1) Borramos token del ViewModel / SessionManager:
                     authViewModel.logout()
@@ -169,7 +190,7 @@ fun AppNavigator() {
                         }
                     }
                 }
-                // (Mientras se ejecuta, podemos mostrar un texto “Cerrando sesión…” o simplemente nada):
+                // (Mientras se ejecuta, podemos mostrar un texto "Cerrando sesión…" o simplemente nada):
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -224,64 +245,6 @@ fun ErrorScreen(
             Button(onClick = onBack) {
                 Text("Go Back")
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ProfileScreen() {
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Profile") })
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = "👤", style = MaterialTheme.typography.displayLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "Profile Screen", style = MaterialTheme.typography.headlineSmall)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Coming soon...",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SettingsScreen() {
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Settings") })
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = "⚙️", style = MaterialTheme.typography.displayLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "Settings Screen", style = MaterialTheme.typography.headlineSmall)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Coming soon...",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
