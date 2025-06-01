@@ -21,7 +21,7 @@ class HeadersInterceptor : Interceptor {
 }
 
 object RetrofitClient {
-    private const val BASE_URL = "https://trustticket.onrender.com/"
+    private const val BASE_URL = "https://trustticket.nest0r.dev/"
 
     // 1) Interceptor que añade Content-Type
     private val headersInterceptor = HeadersInterceptor()
